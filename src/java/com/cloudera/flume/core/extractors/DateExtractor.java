@@ -22,7 +22,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +46,9 @@ import com.google.common.base.Preconditions;
  *   {date_year:2010, date_month:07, date_day:29, date_hr:12, date_min:00}
  *   
  *   date("date", "yyyy-MM-dd", "mydate_")
+ *   {mydate_year:2010, mydate_month:07, mydate_day:29, mydate_hr:12, mydate_min:00}
+ *
+ *   date("date", "timestamp", "mydate_") // When the value of "date" is a EPOCH timestamp
  *   {mydate_year:2010, mydate_month:07, mydate_day:29, mydate_hr:12, mydate_min:00}
  */
 public class DateExtractor extends EventSinkDecorator<EventSink> {

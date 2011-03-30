@@ -32,6 +32,13 @@ import com.cloudera.flume.core.EventSink;
 import com.cloudera.flume.core.EventSinkDecorator;
 import com.google.common.base.Preconditions;
 
+/**
+ * This data extractor assumes that the body of the event is a JSON string. In the
+ * case that it is a valid JSON string, the extractor will assign JSON key/values
+ * to the event itself.
+ * 
+ * @author Derek Smith (derek@simplegeo.com)
+ */
 public class JSONExtractor extends EventSinkDecorator<EventSink> {
   private static final Logger LOG = LoggerFactory.getLogger(JSONExtractor.class);
  
@@ -79,8 +86,7 @@ public class JSONExtractor extends EventSinkDecorator<EventSink> {
           String... argv) {
         Preconditions.checkArgument(argv.length >= 1, "usage: json(jsonKey [jsonKey1, jsonKey2, ...])");
 
-        EventSinkDecorator<EventSink> snk = new JSONExtractor(null, argv);
-        return snk;
+        return new JSONExtractor(null, argv);
       }
     };
   }
