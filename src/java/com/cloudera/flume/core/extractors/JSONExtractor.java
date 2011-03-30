@@ -46,49 +46,25 @@ public class JSONExtractor extends EventSinkDecorator<EventSink> {
   public void append(Event event) throws IOException {
     String s = new String(event.getBody());
     try {
-    	
-    	// This block is truly a masterpiece!
 		JSONObject jsonObject = new JSONObject(s);
-		for( String jsonKey : jsonKeys) {
+		for(String jsonKey : jsonKeys) {
 			try {
-				String val = jsonObject.getString(jsonKey);
-				Attributes.setString(event, jsonKey, val);
-				break;
+				Object obj = jsonObject.get(jsonKey);
+				if(obj instanceof Double) {
+					Attributes.setDouble(event, jsonKey, ((Double)obj).doubleValue());
+				} else if(obj instanceof Integer) {
+					Attributes.setInt(event, jsonKey, ((Integer)obj).intValue());
+				} else if(obj instanceof String) {
+					Attributes.setString(event, jsonKey, (String)obj);
+				} else if(obj instanceof Boolean) {
+					Attributes.setInt(event, jsonKey, ((Boolean)obj).booleanValue() ? 1 : 0);
+				}
 			} catch (JSONException e) {
-				;
-			}
-			
-			try {
-				long val = jsonObject.getLong(jsonKey);
-				Attributes.setLong(event, jsonKey, val);
-				break;
-			} catch (JSONException e) {
-				;
-			}
-
-			try {
-				boolean val = jsonObject.getBoolean(jsonKey);
-				Attributes.setInt(event, jsonKey, val ? 1 : 0);
-				break;
-			} catch (JSONException e) {
-				;
-			}
-
-			try {
-				int val = jsonObject.getInt(jsonKey);
-				Attributes.setInt(event, jsonKey, val);
-				break;
-			} catch (JSONException e) {
-				;
-			}
-
-			try {
-				double val = jsonObject.getDouble(jsonKey);
-				Attributes.setDouble(event, jsonKey, val);
-			} catch (JSONException e) {
-				;
+				// Ignore the JSON exception for now
+				// since we don't know what to do with missing keys.
 			}
 		}
+		
 	} catch (JSONException e) {
 		LOG.error("unable to parse JSON from the event body", e);
 	}

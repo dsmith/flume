@@ -18,9 +18,12 @@
 package com.cloudera.flume.core.extractors;
 
 import java.io.IOException;
-import java.util.Calendar;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,24 +77,32 @@ public class DateExtractor extends EventSinkDecorator<EventSink> {
 
   @Override
   public void append(Event e) throws IOException {
-    SimpleDateFormat date = new SimpleDateFormat(pat);
-    String dateStr = new String(e.get(attr));
+	Calendar tDate = Calendar.getInstance();
+	if(pat.equals("timestamp")) {
+
+		Date date = new Date((long)(Attributes.readLong(e, attr) * 1000));
+		tDate.setTime(date);
+
+	} else {
+
+		SimpleDateFormat date = new SimpleDateFormat(pat);
+		String dateStr = new String(e.get(attr));
     
-    if( dateStr.length() == 0 ){
-      super.append(e);
-      LOG.warn("Date String is missing or empty");
-      return;
-    }
+		if( dateStr.length() == 0 ){
+			super.append(e);
+			LOG.warn("Date String is missing or empty");
+			return;
+		}
     
-    Calendar tDate = Calendar.getInstance();
-    
-    try {
-      tDate.setTime(date.parse(dateStr));
-    } catch (ParseException e1) {
-      super.append(e);
-      LOG.warn("Failed to parse date", e1);
-      return;
-    }
+		try {
+			tDate.setTime(date.parse(dateStr));
+		} catch (ParseException e1) {
+			super.append(e);
+			LOG.warn("Failed to parse date", e1);
+			return;
+		}
+	}
+
     Integer day = tDate.get(Calendar.DAY_OF_MONTH);
     Integer month = tDate.get(Calendar.MONTH)+1;
     Integer year = tDate.get(Calendar.YEAR);

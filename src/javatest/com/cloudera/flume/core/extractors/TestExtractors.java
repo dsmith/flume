@@ -18,6 +18,9 @@
 package com.cloudera.flume.core.extractors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
@@ -87,7 +90,9 @@ public class TestExtractors {
   public void testDateExtractor() throws IOException, InterruptedException {
 	  MemorySinkSource mem = new MemorySinkSource();
       EventImpl e = new EventImpl("Test Event 26/Jul/2010:11:48:05 -0600".getBytes());
+
       Attributes.setString(e, "date", "26/Jul/2010:11:48:05 -0600");
+      Attributes.setDouble(e, "created", 1300750243.9614151);
       
       //Test Default flow
       DateExtractor d = new DateExtractor(mem, "date", "dd/MMM/yyyy:HH:mm:ss Z");
@@ -95,13 +100,17 @@ public class TestExtractors {
       DateExtractor d1 = new DateExtractor(d, "date", "dd/MMM/yyyy:HH:mm:ss Z", "test_");
       //Test custom prefix with no zero padding
       DateExtractor d2 = new DateExtractor(d1, "date", "dd/MMM/yyyy:HH:mm:ss Z", "test2_", false);
+      //Test timestamp
+      DateExtractor d3 = new DateExtractor(d2, "created", "timestamp", "t_");
   
-      d2.open();
-      d2.append(e);
-      d2.close();
+      d3.open();
+      d3.append(e);
+      d3.close();
+
       mem.close();
       mem.open();
-      Event e1 = mem.next();
+
+      Event e1 = mem.next();      
       assertEquals("26", Attributes.readString(e1, "dateday"));
       assertEquals("07", Attributes.readString(e1, "datemonth"));
       assertEquals("2010", Attributes.readString(e1, "dateyear"));
@@ -122,6 +131,37 @@ public class TestExtractors {
       assertEquals("11", Attributes.readString(e1, "test2_hr"));
       assertEquals("48", Attributes.readString(e1, "test2_min"));
       assertEquals("5", Attributes.readString(e1, "test2_sec"));
-  
+
+      assertEquals("21", Attributes.readString(e1, "t_day"));
+      assertEquals("03", Attributes.readString(e1, "t_month"));
+      assertEquals("2011", Attributes.readString(e1, "t_year"));
+      assertEquals("16", Attributes.readString(e1, "t_hr"));
+      assertEquals("30", Attributes.readString(e1, "t_min"));
+      assertEquals("43", Attributes.readString(e1, "t_sec"));
+    }
+
+  @Test
+  public void testJSONExtractor() throws IOException, InterruptedException {
+	  MemorySinkSource mem = new MemorySinkSource();
+	  EventImpl e = new EventImpl("{\"service\":\"money\", \"number\": 0, \"dontdoit\": \"okay\", \"double\": 12.1112, \"boolean\": true}".getBytes());
+      
+      //Test Default flow
+      JSONExtractor j1 = new JSONExtractor(mem, new String[]{"service"});
+      JSONExtractor j2 = new JSONExtractor(j1, new String[]{"number"});
+      JSONExtractor j3 = new JSONExtractor(j2, new String[]{"double", "boolean"});
+
+      j3.open();
+      j3.append(e);
+      j3.close();
+
+      mem.close();
+      mem.open();
+
+      Event e1 = mem.next();
+      assertEquals("money", Attributes.readString(e1, "service"));
+      assertEquals(0, Attributes.readInt(e1, "number").intValue());
+      assertEquals(1, Attributes.readInt(e1, "boolean").intValue());
+      assertTrue(12.1112 == Attributes.readDouble(e1, "double").doubleValue());
+      assertNull(Attributes.readString(e1, "dontdoit"));
     }
 }
